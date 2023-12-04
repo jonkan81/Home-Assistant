@@ -1,0 +1,109 @@
+[
+    {
+        "id": "aa671f202e516d56",
+        "type": "function",
+        "z": "2278071a9e119a35",
+        "name": "Tid kvar",
+        "func": "let millisLeft = Date.parse(msg.payload.start) - new Date().getTime();\nlet timeLeft = new Date(millisLeft);\nreturn {payload: timeLeft.getHours() + \":\" + String(timeLeft.getMinutes()).padStart(2, 0), startTime: msg.payload.start, priceForPeriod: msg.payload.value};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 140,
+        "y": 360,
+        "wires": [
+            [
+                "eb358c874d4ad917"
+            ]
+        ]
+    },
+    {
+        "id": "f20f941b40e1c593",
+        "type": "function",
+        "z": "2278071a9e119a35",
+        "name": "Hitta billigaste perioden",
+        "func": "let prices = msg.payload;\nprices.sort((a, b) => a.value - b.value); \nreturn {payload: prices[0]};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 150,
+        "y": 300,
+        "wires": [
+            [
+                "aa671f202e516d56"
+            ]
+        ]
+    },
+    {
+        "id": "f976d8281dd928c7",
+        "type": "function",
+        "z": "2278071a9e119a35",
+        "name": "3 timmars medel",
+        "func": "const num_hours = 3\n\nlet prices = [];\nfor (let index = new Date().getHours(); index < msg.data.attributes.raw_today.length; index++) {    \n    prices.push(msg.data.attributes.raw_today[index]);     \n}\n//return {payload: new Date().getHours()};\nfor(let index = 0; index < msg.data.attributes.raw_tomorrow.length; index++) {\n    prices.push(msg.data.attributes.raw_tomorrow[index]);\n}\n\nvar averages = [];\nfor(let index = 0; index < prices.length-num_hours; index++) {    \n    averages[index] = {value: 0, start: prices[index].start}\n    averages[index].value = 0;\n    averages[index].start = prices[index].start\n    for(let j = 0; j < num_hours; j++) {\n        averages[index].value += prices[index+j].value;\n    }\n    averages[index].value = averages[index].value / num_hours;\n}\nmsg.payload = averages;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 140,
+        "y": 260,
+        "wires": [
+            [
+                "f20f941b40e1c593"
+            ]
+        ]
+    },
+    {
+        "id": "eb83d5f401476917",
+        "type": "api-current-state",
+        "z": "2278071a9e119a35",
+        "name": "NordPool",
+        "server": "4ce6f7c8.d0fde8",
+        "version": 3,
+        "outputs": 1,
+        "halt_if": "",
+        "halt_if_type": "str",
+        "halt_if_compare": "is",
+        "entity_id": "sensor.nordpool_kwh_se3_sek_2_095_025",
+        "state_type": "str",
+        "blockInputOverrides": false,
+        "outputProperties": [
+            {
+                "property": "payload",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "entityState"
+            },
+            {
+                "property": "data",
+                "propertyType": "msg",
+                "value": "",
+                "valueType": "entity"
+            }
+        ],
+        "for": "0",
+        "forType": "num",
+        "forUnits": "minutes",
+        "override_topic": false,
+        "state_location": "payload",
+        "override_payload": "msg",
+        "entity_location": "data",
+        "override_data": "msg",
+        "x": 120,
+        "y": 180,
+        "wires": [
+            [
+                "f976d8281dd928c7"
+            ]
+        ]
+    },
+    {
+        "id": "4ce6f7c8.d0fde8",
+        "type": "server",
+        "name": "Home Assistant",
+        "addon": true
+    }
+]
